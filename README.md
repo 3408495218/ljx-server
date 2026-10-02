@@ -99,7 +99,7 @@ Flyway 15 张表：
 
 ### B4 商业化 · 邮件 · 限流 · 审计
 
-- 商业化（`V4`）：`GET /api/commerce/vip`（6 档）、`GET /api/commerce/shop`（4 件商品）。**只读展示，无支付端点、无购买通道**；金币与 VIP 目前无产出 / 消耗路径
+- 商业化（`V4`）：`GET /api/commerce/vip`（6 档）、`GET /api/commerce/shop`（4 件商品）。**只读展示，无支付端点、无购买通道**；
 - VIP 与容量解耦（`V5`）：容量由服主自设，`vip_plan.capacity_cap` 已删除，VIP 暂不附带功能权益
 - SMTP 邮件：`ljx.mail.*` + `MailConfig` 手工装配（465 隐式 SSL / 587 STARTTLS 可切），QQ 邮箱用**授权码**当密码；`enabled=true` 而凭据为空时**启动即失败**，未启用时由 `LogMailSender` 把验证码打日志
 - IP 限流：`login` / `register` / `refresh` / `email-code` 四个接口按 `URI + IP` 固定窗口计数，命中返回 429 + 1601；拦截器注册在**认证之前**，`OPTIONS` 直接放行

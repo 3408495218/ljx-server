@@ -45,7 +45,7 @@ src/main/java/com/ljx/server/
 
 ## 数据库
 
-Flyway 迁移 8 个（`V1`、`V3`–`V9`；**`V2__seed_library.sql` 已随内容库废弃删除**），最终 15 张表：
+Flyway 15 张表：
 
 | 分组 | 表 |
 |---|---|

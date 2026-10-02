@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>垃圾侠 · 管理后台</title>
+  <!-- 空 data URI：避免浏览器自动请求 /favicon.ico（后端没有该资源，会被全局异常处理器放大成 500 噪音） -->
+  <link rel="icon" href="data:," />
+  <link rel="stylesheet" href="admin.css?v=22" />
+</head>
+<body>
+  <!-- JS 出错时把原因显示在这里：后台使用者通常看不到浏览器控制台，错误必须自己能"浮出水面" -->
+  <div id="boot-error" class="boot-error" hidden></div>
+  <!-- 登录视图 -->
+  <div id="login-view" class="login-wrap">
+    <form id="login-form" class="login-card" autocomplete="on">
+      <h1>垃圾侠 · 管理后台</h1>
+      <label>管理员账号
+        <input id="username" autocomplete="username" required />
+      </label>
+      <label>密码
+        <input id="password" type="password" autocomplete="current-password" required />
+      </label>
+      <button type="submit" id="login-btn">登录</button>
+      <p id="login-error" class="error" hidden></p>
+      <p class="hint">
+        管理员由部署者通过环境变量 <code>LJX_ADMIN_USERNAME</code> /
+        <code>LJX_ADMIN_PASSWORD</code> 在首次启动时创建。
+      </p>
+      <p class="ver">页面版本 <span id="ver">?</span>（用于确认浏览器是否加载了新版本）</p>
+      <pre id="trace" class="trace" title="最近几步的动作与响应码"></pre>
+    </form>
+  </div>
+
+  <!-- 主视图（登录后显示） -->
+  <div id="app-view" class="app" hidden>
+    <aside class="sidebar">
+      <div class="brand">垃圾侠 · 后台</div>
+      <nav id="nav">
+        <button class="nav-item active" data-panel="overview">概览</button>
+        <button class="nav-item" data-panel="announcement">公告</button>
+        <button class="nav-item" data-panel="shop">商品</button>
+        <button class="nav-item" data-panel="level">等级</button>
+        <button class="nav-item" data-panel="cdk">CDK 兑换</button>
+        <button class="nav-item" data-panel="mail">邮件</button>
+        <button class="nav-item" data-panel="storage">存储</button>
+        <button class="nav-item" data-panel="database">数据库</button>
+      </nav>
+      <div class="sidebar-foot">
+        <span id="admin-name"></span>
+        <span class="foot-actions">
+          <button id="change-pwd-btn" class="link">修改密码</button>
+          <button id="logout-btn" class="link">退出</button>
+        </span>
+      </div>
+    </aside>
+
+    <main class="content">
+      <section id="panel-overview" class="panel">
+        <h2>概览</h2>
+        <p class="hint">
+          后台骨架已就绪。公告、CDK、数据库三个面板会在后续阶段逐个接入。
+        </p>
+        <dl id="overview-info" class="kv"></dl>
+      </section>
+      <section id="panel-announcement" class="panel" hidden>
+        <h2>公告</h2>
+        <p class="hint">
+          这里的内容显示在**玩家端底部状态栏右侧**（即原来「问题反馈，请加官方QQ群」那一格），
+          多条按「排序」轮播、间隔见下方设置；没有启用中的公告时，玩家端回退显示 QQ 群文案。
+        </p>
+        <div class="form-row labeled">
+          <label class="mini">轮播间隔（秒，3-120）
+            <input id="ann-rotate" type="number" min="3" max="120" value="8" />
+          </label>
+          <button type="button" id="ann-rotate-save">保存间隔</button>
+        </div>
+        <p id="ann-rotate-hint" class="hint"></p>
+        <form id="ann-form" class="form-row labeled">
+          <label class="mini wide">公告内容
+            <input id="ann-content" maxlength="500" placeholder="最多 500 字，会显示在玩家端底部状态栏" required />
+          </label>
+          <label class="mini">排序
+            <input id="ann-sort" type="number" value="0" />
+          </label>
+          <button type="submit">新增公告</button>
+        </form>
+        <p class="hint">排序数字越小越靠前；多条公告会按此顺序在玩家端轮播。</p>
+        <table class="table" id="ann-table">
+          <thead>
+            <tr><th>内容</th><th>排序</th><th>状态</th><th>操作</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+        <p id="ann-hint" class="hint"></p>
+      </section>
+      <section id="panel-level" class="panel" hidden>
+        <h2>等级</h2>
+        <p class="hint">
+          普通玩家**每天登录一次获得一次经验**；这里设置「升到下一级需要多少经验」与「该等级的
+          客户端压缩包上传上限」。改完**立刻生效**（配额是读时取配置，不需要重启）。
+        </p>
+
+        <form id="level-daily-form" class="form-row labeled">
+          <label class="mini">每日登录经验
+            <input id="level-daily-exp" type="number" min="0" value="1" />
+          </label>
+          <button type="submit">保存</button>
+        </form>
+
+        <table class="table" id="level-table">
+          <thead>
+            <tr>
+              <th>等级</th><th>升到下一级需要经验</th><th>上传上限（MB）</th><th>备注</th><th>操作</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+        <form id="level-add-form" class="form-row labeled">
+          <label class="mini">新等级
+            <input id="level-new-level" type="number" min="0" value="6" />
+          </label>
+          <label class="mini">所需经验
+            <input id="level-new-exp" type="number" min="0" value="1000" />
+          </label>
+          <label class="mini">上传上限
+            <input id="level-new-upload" type="number" min="0" value="40" />
+          </label>
+          <button type="submit">新增等级</button>
+        </form>
+        <p id="level-hint" class="hint"></p>
+      </section>
+
+      <section id="panel-shop" class="panel" hidden>
+        <h2>商品</h2>
+        <p class="hint">
+          这里改的价格、时长、上传上限与上下架会**立刻对玩家端生效**；
+          「时长」就是玩家买到手后的**有效期**（置顶卡与 VIP 都在这里设置）。
+        </p>
+
+        <h3 class="sub">道具商品</h3>
+        <!-- 价格与时长直接在表格里改，改完点「保存」；不再用连续弹窗问三个值（很难用且容易误操作） -->
+        <table class="table" id="shop-table">
+          <thead>
+            <tr><th>商品</th><th>价格（钻石）</th><th>时长（天，空=永久）</th><th>状态</th><th>操作</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+
+        <h3 class="sub">VIP 档位</h3>
+        <table class="table" id="plan-table">
+          <thead>
+            <tr>
+              <th>档位</th><th>价格</th><th>时长（天，空=永久）</th><th>上传上限（MB）</th>
+              <th>房间边框键</th><th>图标键</th><th>操作</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+
+        <h3 class="sub">生效中的效果（可改到期时间或撤销）</h3>
+        <table class="table" id="effect-table">
+          <thead>
+            <tr><th>类型</th><th>对象</th><th>归属</th><th>到期时间</th><th>操作</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+        <p id="shop-hint" class="hint"></p>
+      </section>
+
+      <section id="panel-cdk" class="panel" hidden>
+        <h2>CDK 兑换</h2>
+        <p class="hint">
+          批量生成兑换码 → 复制发给玩家 → 玩家在客户端「商城」里兑换成钻石。
+          「次数」填 0 表示不限次，但**同一个码同一账号仍只能兑一次**。
+        </p>
+        <form id="cdk-form" class="form-row labeled">
+          <label class="mini">生成数量
+            <input id="cdk-count" type="number" min="1" max="500" value="10" />
+          </label>
+          <label class="mini">每码钻石
+            <input id="cdk-coins" type="number" min="1" value="100" />
+          </label>
+          <label class="mini">可兑换次数
+            <input id="cdk-uses" type="number" min="0" value="1" />
+          </label>
+          <label class="mini">有效期（天）
+            <input id="cdk-days" type="number" min="0" placeholder="留空=永久" />
+          </label>
+          <button type="submit">批量生成</button>
+        </form>
+        <p class="hint">
+          「生成数量」单次最多 500；「可兑换次数」填 <b>0</b> 表示不限次数，
+          但**同一个码同一个账号仍只能兑一次**；「有效期」留空表示永不过期。
+        </p>
+        <div id="cdk-batch" class="batch" hidden>
+          <div class="batch-head">
+            <span>批次 <b id="cdk-batch-no"></b> 已生成 —— 点右侧一次性复制发给玩家</span>
+            <button id="cdk-copy">复制全部</button>
+          </div>
+          <textarea id="cdk-codes" readonly rows="4"></textarea>
+        </div>
+        <!-- 一级：批次汇总（一行一批）。点「展开」按需拉该批明细，码再多也不会糊成一片 -->
+        <table class="table" id="cdk-table">
+          <thead>
+            <tr>
+              <th>批次</th><th>生成时间</th><th>数量</th><th>钻石</th>
+              <th>次数</th><th>已领/启用</th><th>有效期</th><th>操作</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+        <p id="cdk-hint" class="hint"></p>
+      </section>
+      <section id="panel-mail" class="panel" hidden>
+        <h2>邮件（SMTP）</h2>
+        <p class="hint">
+          用于发送邮箱验证码。**没有配置时验证码会打印到后端日志**（本地开发够用）。
+          这里保存后**立刻生效**，不需要重启后端。
+          优先级：<b>环境变量 &gt; 后台配置</b>。
+        </p>
+
+        <div id="mail-source" class="kind-card warn">
+          <span class="badge">生效中</span>
+          <span id="mail-source-text" class="kind-hint">加载中…</span>
+        </div>
+
+        <form id="mail-form" class="form-row labeled">
+          <label class="mini">启用
+            <select id="mail-enabled">
+              <option value="true">开启</option>
+              <option value="false">关闭</option>
+            </select>
+          </label>
+          <label class="mini">SMTP 主机
+            <input id="mail-host" placeholder="如 smtp.qq.com" />
+          </label>
+          <label class="mini">端口
+            <input id="mail-port" type="number" min="1" max="65535" value="465" />
+          </label>
+          <label class="mini">用户名
+            <input id="mail-username" placeholder="如 xxx@qq.com" />
+          </label>
+          <label class="mini">密码 / 授权码
+            <input id="mail-password" type="password" placeholder="留空=保持不变" />
+          </label>
+          <label class="mini">发件人
+            <input id="mail-from" placeholder="留空=用户名" />
+          </label>
+          <label class="mini">SSL
+            <select id="mail-ssl">
+              <option value="true">开启（465 端口）</option>
+              <option value="false">关闭（587 走 STARTTLS）</option>
+            </select>
+          </label>
+          <button type="submit">保存</button>
+        </form>
+        <p class="hint">
+          QQ / 163 邮箱请填**授权码**而不是登录密码（QQ 邮箱在「设置 → 账户 → POP3/SMTP 服务」里生成）。
+        </p>
+
+        <form id="mail-test-form" class="form-row labeled">
+          <label class="mini wide">发送测试邮件到
+            <input id="mail-test-to" placeholder="用于验证配置是否正确，如 you@qq.com" />
+          </label>
+          <button type="submit">发送测试</button>
+        </form>
+        <p id="mail-hint" class="hint"></p>
+      </section>
+
+      <section id="panel-storage" class="panel" hidden>
+        <h2>存储</h2>
+        <p class="hint">
+          玩家上传的客户端压缩包存放在这里。**如果目录落在系统临时目录（/tmp 或 %TEMP%），
+          服务器重启或系统清理会把这些包全部删掉**——正式部署请把 <code>LJX_STORAGE_DIR</code>
+          指向数据盘。
+        </p>
+
+        <div id="storage-alert" class="kind-card danger" hidden>
+          <span class="badge">注意</span>
+          <span id="storage-alert-text" class="kind-hint"></span>
+        </div>
+
+        <dl id="storage-info" class="kv-grid"></dl>
+      </section>
+
+      <section id="panel-database" class="panel" hidden>
+        <h2>数据库</h2>
+
+        <h3 class="sub">① 当前使用的是什么数据库</h3>
+        <div id="db-kind" class="kind-card">
+          <span id="db-kind-badge" class="badge">—</span>
+          <span id="db-kind-hint" class="kind-hint">加载中…</span>
+        </div>
+
+        <dl id="db-status" class="kv-grid"></dl>
+
+        <h3 class="sub">② 要换成 MySQL？三步就好</h3>
+        <ol class="steps">
+          <li>在 MySQL 里**建库**（例：<code>CREATE DATABASE lajixia DEFAULT CHARSET utf8mb4;</code>）</li>
+          <li>在下面填好连接信息，点「**测试连接**」确认能连上（这一步只试连，**不会改任何配置**）</li>
+          <li>点「**生成配置片段**」，把连接串与三个环境变量配到部署环境，然后**重启后端**</li>
+        </ol>
+
+        <div class="target-note">
+          目标数据库：<b>MySQL</b>（本平台默认脚本按 MySQL 编写；面板不做运行时切换，避免配错后连后台都进不去）
+        </div>
+        <form id="db-form" class="form-row labeled">
+          <label class="mini">主机<input id="db-host" value="127.0.0.1" placeholder="如 127.0.0.1" required /></label>
+          <label class="mini">端口<input id="db-port" type="number" min="1" max="65535" value="3306" /></label>
+          <label class="mini">数据库名<input id="db-name" placeholder="如 lajixia" required /></label>
+          <label class="mini">用户名<input id="db-user" placeholder="如 root" required /></label>
+          <label class="mini">密码<input id="db-pass" type="password" placeholder="不显示也不保存" /></label>
+          <button type="button" id="db-test">测试连接</button>
+          <button type="button" id="db-snippet">生成配置片段</button>
+        </form>
+        <p id="db-hint" class="hint"></p>
+        <div id="db-snippet-box" class="batch" hidden>
+          <div class="batch-head">
+            <span>部署配置片段（密码用环境变量占位，请勿提交到仓库）</span>
+            <button id="db-copy">复制</button>
+          </div>
+          <textarea id="db-snippet-text" readonly rows="9"></textarea>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- 带版本号：静态资源改动后浏览器不会再拿旧缓存（后台使用者不必手动强刷） -->
+  <!-- 修改密码弹窗 -->
+  <div id="pwd-modal" class="modal" hidden>
+    <form id="pwd-form" class="modal-card">
+      <h3 id="pwd-modal-title">修改管理员密码</h3>
+      <p class="hint">
+        后台是最高权限入口，请勿继续使用初始密码。新密码至少 8 位。
+        修改后**已登录的其他令牌最长 2 小时后失效**。
+      </p>
+      <label class="mini">当前密码
+        <input id="pwd-old" type="password" autocomplete="current-password" required />
+      </label>
+      <label class="mini">新密码（至少 8 位）
+        <input id="pwd-new" type="password" autocomplete="new-password" required />
+      </label>
+      <label class="mini">确认新密码
+        <input id="pwd-new2" type="password" autocomplete="new-password" required />
+      </label>
+      <p id="pwd-hint" class="hint"></p>
+      <div class="modal-actions">
+        <button type="button" id="pwd-cancel" class="ghost">取消</button>
+        <button type="submit">确定修改</button>
+      </div>
+    </form>
+  </div>
+
+  <script src="admin.js?v=22"></script>
+</body>
+</html>

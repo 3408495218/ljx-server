@@ -1,0 +1,13 @@
+# 本地开发：H2 文件库，数据落在 lajixia-server/data/ljx.mv.db，重启后端不丢账号与房间。
+#
+# 为什么用 profile 而不是直接改 application.yml：
+#   mvn test 的用例共享同一个内存库做隔离，默认数据源必须保持 jdbc:h2:mem:ljx。
+#   把文件库放进 profile，只有显式激活 local 时才落盘，测试完全不受影响。
+#
+# 重置数据：停掉后端后删除 lajixia-server/data/ 目录即可（下次启动会重新迁移建表）。
+spring:
+  datasource:
+    url: jdbc:h2:file:./data/ljx;MODE=MySQL;DATABASE_TO_LOWER=TRUE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:

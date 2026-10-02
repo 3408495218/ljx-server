@@ -1,0 +1,92 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: lajixia-server
+  datasource:
+    url: jdbc:h2:mem:ljx;MODE=MySQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: none
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  servlet:
+    multipart:
+      # 客户端压缩包上限 30MB（见 QuotaType.CLIENT_PKG_MB），留出余量后由配额校验给出精确提示
+      max-file-size: 40MB
+      max-request-size: 40MB
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+ljx:
+  # 平台侧文件存储根目录（客户端压缩包）；生产必须通过环境变量 LJX_STORAGE_DIR 指向持久盘
+  storage:
+    dir: ${LJX_STORAGE_DIR:${java.io.tmpdir}/ljx-storage}
+  jwt:
+    # 开发默认值；生产必须通过环境变量 LJX_JWT_SECRET 覆盖
+    secret: ${LJX_JWT_SECRET:bGp4LWRldi1qd3Qtc2VjcmV0LWtleS1kby1ub3QtdXNlLWluLXByb2R1Y3Rpb24tMjAyNg==}
+    access-ttl: 2h
+    refresh-ttl: 30d
+  admin:
+    # 首个管理员：仅在「管理员表为空」且两者都非空时创建；留空则不创建，也不使用任何默认密码。
+    # 生产请用环境变量：LJX_ADMIN_USERNAME / LJX_ADMIN_PASSWORD
+    username: ${LJX_ADMIN_USERNAME:}
+    password: ${LJX_ADMIN_PASSWORD:}
+    # 管理端 JWT 密钥；留空则回退到 ljx.jwt.secret
+    jwt-secret: ${LJX_ADMIN_JWT_SECRET:}
+    # 管理端令牌有效期（比玩家端短，且不提供 refresh）
+    token-ttl: 2h
+    # 允许访问 /api/admin/** 的来源 IP；留空表示不限制（生产建议锁到内网）
+    # 管理员接口 IP 白名单，逗号分隔；留空表示不限制。
+    # **显式写出环境变量名**：Spring Boot 松散绑定对 `allowed-ips` 期望的是
+    # `LJX_ADMIN_ALLOWEDIPS`（连字符直接删除）。写成 `LJX_ADMIN_ALLOWED_IPS` 会静默不生效 ——
+    # 白名单失效是安全问题，不能让使用者去猜变量名。
+    allowed-ips: ${LJX_ADMIN_ALLOWED_IPS:}
+  mail:
+    # 邮箱验证码通道：true 走真实 SMTP，false 时验证码打到服务端日志。
+    # 默认关闭——未注入凭据也能正常启动，不会误发真实邮件。
+    enabled: ${LJX_MAIL_ENABLED:false}
+    host: ${LJX_MAIL_HOST:smtp.qq.com}
+    port: ${LJX_MAIL_PORT:465}
+    # QQ 邮箱用「授权码」而非登录密码（设置 → 账户 → IMAP/SMTP 服务）。
+    # 凭据只从环境变量读取，不写进配置文件、不进版本库：
+    #   LJX_MAIL_USERNAME=xxx@qq.com
+    #   LJX_MAIL_PASSWORD=<16 位授权码>
+    # enabled=true 而凭据为空时启动即失败（见 MailConfig），避免上线后才发现发不出信。
+    username: ${LJX_MAIL_USERNAME:}
+    password: ${LJX_MAIL_PASSWORD:}
+    from: ${LJX_MAIL_FROM:}
+    ssl-enabled: ${LJX_MAIL_SSL:true}
+  security:
+    # 仅当部署在可信反向代理之后才置 true：否则客户端可伪造 X-Forwarded-For 绕过限流
+    # 反向代理后置 true：按 X-Forwarded-For 取真实 IP（否则限流把所有玩家算成同一个人）
+    trust-forwarded-header: ${LJX_SECURITY_TRUST_FORWARDED_HEADER:false}
+  rate-limit:
+    enabled: true
+    login:
+      limit: 10
+      window: 5m
+    register:
+      limit: 5
+      window: 10m
+    refresh:
+      limit: 30
+      window: 5m
+    email-code:
+      limit: 5
+      window: 10m
+
+logging:
+  level:
+    com.ljx: INFO

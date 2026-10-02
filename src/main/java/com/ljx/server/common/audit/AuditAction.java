@@ -1,0 +1,31 @@
+package com.ljx.server.common.audit;
+
+/** 需要留痕的关键操作；只覆盖身份与数据变更，不记录读操作 */
+public enum AuditAction {
+
+    REGISTER,
+    LOGIN,
+    LOGIN_FAILED,
+    EMAIL_BIND,
+    ROOM_CREATE,
+    ROOM_DELETE,
+    CLIENT_PACKAGE_UPLOAD,
+    CLIENT_PACKAGE_DELETE,
+
+    /* 管理后台 */
+    ADMIN_LOGIN,
+    ADMIN_LOGIN_FAILED,
+    ADMIN_LOGOUT,
+    ADMIN_PASSWORD_CHANGE,
+    ANNOUNCEMENT_CREATE,
+    ANNOUNCEMENT_UPDATE,
+    ANNOUNCEMENT_DELETE,
+    CDK_BATCH_CREATE,
+    CDK_TOGGLE,
+    CDK_DELETE,
+    CDK_REDEEM,
+    SHOP_PURCHASE,
+    SHOP_ITEM_UPDATE,
+    LEVEL_CONFIG_UPDATE,
+    MAIL_CONFIG_UPDATE
+}

@@ -1,0 +1,38 @@
+# lajixia-server · 仓库忽略规则
+
+# ---------- 构建产物 ----------
+target/
+
+# ---------- 本地开发数据 ----------
+# H2 文件库（local profile）：账号、房间、密码哈希都在里面，绝不提交
+data/
+# 上传的客户端压缩包（ljx.storage.dir 默认落在 java.io.tmpdir；
+# 若被指到项目内，这里是兜底）
+storage/
+
+# ---------- 凭据（绝不提交）----------
+# 所有敏感配置都通过环境变量注入，配置文件里只有 ${LJX_XXX:默认值} 形式的占位符。
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*credential*
+*secret*
+application-prod.yml
+application-prod.yaml
+# 注：application-local.yml 只有 H2 连接串与注释、不含任何凭据，
+#     刻意保留，方便贡献者本地直接跑起来。
+
+# ---------- 编辑器 / 系统 ----------
+.idea/
+.vscode/
+*.iml
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---------- 日志 ----------
+*.log
+logs/

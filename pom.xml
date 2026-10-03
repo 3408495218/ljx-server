@@ -13,7 +13,7 @@
 
   <groupId>com.ljx</groupId>
   <artifactId>lajixia-server</artifactId>
-  <version>0.1.0-SNAPSHOT</version>
+  <version>0.1.0</version>
   <name>lajixia-server</name>
   <description>垃圾侠平台后端</description>
 

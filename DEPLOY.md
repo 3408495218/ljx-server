@@ -1,7 +1,7 @@
 # 垃圾侠后端 · 部署文档
 
-> 适用版本：`lajixia-server 0.1.0-SNAPSHOT`
-> 产物：`target/lajixia-server-0.1.0-SNAPSHOT.jar`（可执行 fat jar，约 61 MB，内嵌 Tomcat）
+> 适用版本：`lajixia-server 0.1.0`
+> 产物：`target/lajixia-server-0.1.0.jar`（可执行 fat jar，约 61 MB，内嵌 Tomcat）
 
 ---
 
@@ -74,7 +74,7 @@ export LJX_ADMIN_PASSWORD='换成强密码'
 export LJX_STORAGE_DIR=/var/lib/lajixia/storage
 mkdir -p "$LJX_STORAGE_DIR"
 
-java -jar lajixia-server-0.1.0-SNAPSHOT.jar
+java -jar lajixia-server-0.1.0.jar
 ```
 
 启动成功会看到：

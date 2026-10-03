@@ -3,6 +3,7 @@ package com.ljx.server.common.api;
 public enum ErrorCode {
 
     VALIDATION_FAILED(1001, "参数错误"),
+    NOT_FOUND(1002, "请求的资源不存在"),
 
     USERNAME_TAKEN(1101, "用户名已被占用"),
     BAD_CREDENTIALS(1102, "用户名或密码错误"),

@@ -4,6 +4,7 @@ import com.ljx.server.common.api.ApiResponse;
 import com.ljx.server.common.api.ErrorCode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -53,6 +55,25 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleTooLarge(MaxUploadSizeExceededException e) {
         return ResponseEntity.badRequest()
                 .body(ApiResponse.error(ErrorCode.VALIDATION_FAILED.code(), "压缩包体积过大，请精简后再上传"));
+    }
+
+    /**
+     * 静态资源 / 路径不存在。
+     * <p>
+     * 不处理就会落进下面的兜底 {@code Exception} 分支，结果是**所有 404 都变成 500**，
+     * 而且每条都写一整段 ERROR 堆栈。实际影响不小：
+     * <ul>
+     *   <li>被关闭的接口文档（{@code SPRINGDOC_*_ENABLED=false}）从 404 变成 500；</li>
+     *   <li>浏览器自动请求的 {@code /favicon.ico}、扫描器探测的任意路径，会持续刷 ERROR 日志；</li>
+     *   <li>前端拿到 5000 只能提示"服务器内部错误"，掩盖了"地址写错"这个真实原因。</li>
+     * </ul>
+     * 改为 404 + 业务码 1002，并且**只记 debug** —— 404 属正常现象，不该污染错误日志。
+     */
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ApiResponse<Void>> handleNoResource(NoResourceFoundException e) {
+        log.debug("静态资源不存在: {}", e.getResourcePath());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.error(ErrorCode.NOT_FOUND.code(), ErrorCode.NOT_FOUND.message()));
     }
 
     @ExceptionHandler(Exception.class)
